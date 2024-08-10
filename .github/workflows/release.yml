@@ -43,16 +43,6 @@ jobs:
       target_subproject: ${{ github.event.inputs.target_subproject }}
 
   # ensure the input release tag is valid
-  validate_release:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Get github release information
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        uses: cardinalby/git-get-release-action@1.2.4
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          tag: ${{ github.event.inputs.target_release_tag }}
 
   build:
     uses: ./.github/workflows/build.yml
@@ -78,43 +68,11 @@ jobs:
       matrix: ${{ fromJson(needs.matrix_prep.outputs.matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Display context
-        run: |
-          echo ref_name = ${{ github.ref_name }}
-          echo target_subproject = ${{ github.event.inputs.target_subproject }}
-          echo target_release_tag = ${{ github.event.inputs.target_release_tag }}
-
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-artifacts
           path: build-artifacts
-
-      - name: Get github release information
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        id: get_release
-        uses: cardinalby/git-get-release-action@1.2.4
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          tag: ${{ github.event.inputs.target_release_tag }}
-
-      - name: Generate publish related information
-        id: release_info
-        run: |
-          if [ $GITHUB_EVENT_NAME == 'release' ]
-          then
-              # Leave an empty value here, so Kir-Antipov/mc-publish will infer the tag from the action context
-              echo "tag_name=" >> $GITHUB_OUTPUT
-          elif [ $GITHUB_EVENT_NAME == 'workflow_dispatch' ]
-          then
-              echo "tag_name=${{ github.event.inputs.target_release_tag }}" >> $GITHUB_OUTPUT
-          else
-              echo Unknown github event name $GITHUB_EVENT_NAME
-              exit 1
-          fi
 
       - name: Read common properties
         id: properties_g
